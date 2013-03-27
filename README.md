@@ -1,109 +1,45 @@
-# deep
+# shavaluator-js
 
-This library contains utilities for manipulating deeply-nested data structures. These functions only perform recursive traversal of arrays and "plain" objects, that is, those objects that were created using object literals (`{}`) or `new Object`.
+This library provides a convenient wrapper for sending Lua scripts to a Redis server via `EVALSHA`.
 
-## Installation
+#### What is EVALSHA?
 
-    npm install deep
+`EVALSHA` is a Redis command that takes advantage of Redis's Lua script caching. Once a Lua script has been sent to Redis via `EVAL` or `SET SCRIPT`, the script will be cached. You can use `EVALSHA` to execute the same script by sending the *SHA-1 hash* of the script, rather than the body of the script itself.
 
-## Function reference
+A shavaluator object wraps a Redis client for executing Lua scripts. It will always attempt `EVALSHA` first, falling back on `EVAL` if the script has not yet been cached by the Redis server.
 
-### isPlainObject(object)
-
-```js
-deep.isPlainObject({}); // true
-deep.isPlainObject(new Object); // true
-deep.isPlainObject([]); // false
-deep.isPlainObject(new function(){}); // false
-```
-
-This function works by checking to see if the argument's constructor's `name` is `Object`.
-
-----
-
-### clone(object)
+#### Example
 
 ```js
-x = {
-  a: 1,
-  b: [ 2, 3, function(arg) { return arg; } ]
-};
+Shavaluator = require('shavaluator')
 
-y = deep.clone(x) // -> deep-copies x, preserving references to nested functions
+// 1. Initialize a shavaluator with a Redis client
+var shavaluator = new Shavaluator(redis);
+
+// 2. Load a series of named Lua scripts into the shavaluator.
+shavaluator.load({
+  delequal: " \
+    if redis.call('GET', KEYS[1]) == ARGV[1] then \
+      return redis.call('DEL', KEYS[i]) \
+    end \
+    return 0 \
+  "
+});
+
+// 3. The 'delequal' script is now loaded into the shavaluator and bound
+//    as a method. When you call this, the shavaluator will first attempt
+//    an EVALSHA, and fall back onto EVAL.
+shavaluator.delequal({ keys: 'someKey', args: 'deleteMe' });
 ```
 
-This will preserve references to all non-array, non-plain objects, including functions.
+### Loading scripts
 
-----
+### Executing scripts
 
-### extend(destination, source, ...)
+## Class reference
 
-```js
-x = { a: { b: { c: 1 } }, d: 2, e: 3 }
-y = { a: { b: { c: 4, f: 5 }, d: 6, g: 7 } }
-z = { a: { b: { c: 8 } }, h: 9 }
+### Shavaluator(redis, opts =  {})
 
-deep.extend(x, y, z)
+### load(scripts)
 
-// x -> { a: { b: { c: 8, f: 5 }, d: 6, e: 3, g: 7 }, h: 9 }
-```
-
-Recursively merges each `source` object into `destination`, preserving any nested structure common among the sources. Precedence is given to the rightmost sources.
-
-----
-
-### select(root, filter)
-
-```js
-x = {
-  a: 1,
-  b: [ 2, 3, 'hello' ]
-};
-
-deep.select(x, function(obj) { return typeof obj == 'number' } );
-
-// -> [
-//      { value: 1, path: [ 'a' ] },
-//      { value: 2, path: [ 'b', '0' ] },
-//      { value: 3, path: [ 'c', '1' ] }
-//    ]
-```
-
-Recursively traverses arrays and plain objects for any values that satisfy the test defined by the `filter` function. The path of references to each value is returned.
-
-----
-
-### set(root, path, value)
-
-```js
-x = { a: { b: [ { c: 5 } ] } }
-deep.set(x, ['a', 'b', 0, 'c'], 'hello');
-
-// x -> { a: { b: [ { c: 'hello' } ] } }
-```
-
-Inserts `value` into the `root` object by traversing a sequence of references defined by `path`.
-
-----
-
-### transform(object, filter, transform)
-
-```js
-x = {
-  a: 1,
-  b: [ 2, 3, 'hello' ]
-};
-
-deep.transform(
-  x,
-  function(obj) { return typeof obj == 'string' },
-  function(obj) { return obj.length }
-);
-
-// -> {
-//      a: 1,
-//      b: [ 2, 3, 5 ]
-//    }
-```
-
-Returns a deep copy of `object`, using the `transform` function to modify any elements that satisfy the `filter` function.
+### eval(scriptName, params...)
