@@ -23,9 +23,9 @@ describe 'Shavaluator', () ->
       (cb) -> redisClient.send_command 'script', ['flush'], cb # Hack due bug in redis client, which doesn't implement "script *" correctly
     ], done
 
-  it 'should pass an error if the script was never loaded', (done) ->
+  it 'should pass an error if the script was never added', (done) ->
     @shavaluator.eval 'nonexistent', (err, result) ->
-      err.message.should.match /not loaded/
+      err.message.should.match /not added/
       done()
 
   describe '_parseEvalParams()/eval() syntax', () ->
@@ -83,17 +83,17 @@ describe 'Shavaluator', () ->
         parsed.callback.should.eql @callbackParam
         done()
 
-  describe 'load()', () ->
+  describe 'add()', () ->
 
-    it 'binds methods for loaded scripts', (done) ->
-      @shavaluator.load foobar: "not a valid script"
+    it 'binds methods for scripts', (done) ->
+      @shavaluator.add foobar: "not a valid script"
       _.isFunction(@shavaluator.foobar).should.eql true
       done()
 
   describe 'eval()', () ->
 
     beforeEach (done) ->
-      @shavaluator.load
+      @shavaluator.add
         echo: 'return ARGV[1]'
         luaget: "return redis.call('GET', KEYS[1])"
         setnxget: "redis.call('SETNX', KEYS[1], ARGV[1]); return redis.call('GET', KEYS[1]);"

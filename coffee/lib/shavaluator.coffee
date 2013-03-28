@@ -17,7 +17,10 @@ module.exports = class Shavaluator
     sha: sha1(lua)
 
   @_parseEvalParams = (params...) ->
-    callback = if _.isFunction(params[params.length - 1]) then params.pop() else null
+    callback = if _.isFunction(params[params.length - 1])
+      params.pop()
+    else
+      null
 
     # Extract command parameters if they are given as a { keys:, args: } hash
     if params.length == 1 && _.isObject(params[0])
@@ -43,18 +46,19 @@ module.exports = class Shavaluator
     @config = _.extend {}, defaultConfig
     _.extend @config, opts if opts?
 
-  load: (scripts, opts = {}) ->
-    for handle, lua of scripts
-      @scripts[handle] = @constructor.hashifyScript(lua)
-      @_bind(handle) if (opts.autobind ? @config.autobind) && !@[handle]?
+  add: (scripts, opts = {}) ->
+    for scriptName, lua of scripts
+      @scripts[scriptName] = @constructor.hashifyScript(lua)
+      @_bind(scriptName) if (opts.autobind ? @config.autobind) && !@[scriptName]?
 
-  _bind: (handle) ->
-    @[handle] = (params...) =>
-      @eval handle, params...
+  _bind: (scriptName) ->
+    @[scriptName] = (params...) =>
+      @eval scriptName, params...
 
-  # @param String handle The handle of the loaded Lua script. An error will be passed to the callback if the script was never loaded.
+  # @scriptName {string} The name assigned to a Lua script when it was added.
+  #   An error will be passed to the callback if the script was never added.
   #
-  # The following arguments represent parameters passed to the script.
+  # The next arguments represent parameters passed intto the script.
   # These can be passed in one of three ways:
   #   1. An object with two array fields:
   #     {
@@ -64,17 +68,17 @@ module.exports = class Shavaluator
   #   2. An array of parameters, matching the syntax of the Redis EVAL command
   #     [ numKeys, key1, key2, ..., arg1, arg2, ... ]
   #   3. A series of parameters passed directly, matching the syntax of the Redis EVAL command
-  #     eval(handle, numKeys, key1, key2, ..., arg1, arg2, ..., callback)
+  #     eval(scriptName, numKeys, key1, key2, ..., arg1, arg2, ..., callback)
   #
-  # @param optional Function callback A callback, triggered when the Redis command completes or raises an error.
-  eval: (handle, params...) ->
+  # @callback {function, optional} A callback, triggered when the Redis command completes or raises an error.
+  eval: (scriptName, params...) ->
     { params, callback } = Shavaluator._parseEvalParams(params...)
-    script = @scripts[handle]
+    script = @scripts[scriptName]
 
     unless script
       if callback
         process.nextTick () ->
-          err = new Error("'#{handle}' script was not loaded")
+          err = new Error("'#{scriptName}' script was not added")
           callback err
 
       # Early out

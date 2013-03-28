@@ -60,18 +60,18 @@
       }
     }
 
-    Shavaluator.prototype.load = function(scripts, opts) {
-      var handle, lua, _ref1, _results;
+    Shavaluator.prototype.add = function(scripts, opts) {
+      var lua, scriptName, _ref1, _results;
 
       if (opts == null) {
         opts = {};
       }
       _results = [];
-      for (handle in scripts) {
-        lua = scripts[handle];
-        this.scripts[handle] = this.constructor.hashifyScript(lua);
-        if (((_ref1 = opts.autobind) != null ? _ref1 : this.config.autobind) && (this[handle] == null)) {
-          _results.push(this._bind(handle));
+      for (scriptName in scripts) {
+        lua = scripts[scriptName];
+        this.scripts[scriptName] = this.constructor.hashifyScript(lua);
+        if (((_ref1 = opts.autobind) != null ? _ref1 : this.config.autobind) && (this[scriptName] == null)) {
+          _results.push(this._bind(scriptName));
         } else {
           _results.push(void 0);
         }
@@ -79,30 +79,30 @@
       return _results;
     };
 
-    Shavaluator.prototype._bind = function(handle) {
+    Shavaluator.prototype._bind = function(scriptName) {
       var _this = this;
 
-      return this[handle] = function() {
+      return this[scriptName] = function() {
         var params;
 
         params = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-        return _this["eval"].apply(_this, [handle].concat(__slice.call(params)));
+        return _this["eval"].apply(_this, [scriptName].concat(__slice.call(params)));
       };
     };
 
     Shavaluator.prototype["eval"] = function() {
-      var callback, handle, params, script, _ref1,
+      var callback, params, script, scriptName, _ref1,
         _this = this;
 
-      handle = arguments[0], params = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+      scriptName = arguments[0], params = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
       _ref1 = Shavaluator._parseEvalParams.apply(Shavaluator, params), params = _ref1.params, callback = _ref1.callback;
-      script = this.scripts[handle];
+      script = this.scripts[scriptName];
       if (!script) {
         if (callback) {
           process.nextTick(function() {
             var err;
 
-            err = new Error("'" + handle + "' script was not loaded");
+            err = new Error("'" + scriptName + "' script was not added");
             return callback(err);
           });
         }

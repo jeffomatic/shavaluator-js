@@ -16,8 +16,8 @@ Shavaluator = require('shavaluator')
 // 1. Initialize a shavaluator with a Redis client
 var shavaluator = new Shavaluator(redis);
 
-// 2. Load a series of named Lua scripts into the shavaluator.
-shavaluator.load({
+// 2. Add a series of named Lua scripts to the shavaluator.
+shavaluator.add({
   delequal:
     " \
     if redis.call('GET', KEYS[1]) == ARGV[1] then \
@@ -27,15 +27,15 @@ shavaluator.load({
     "
 });
 
-// 3. The 'delequal' script is now loaded into the shavaluator and bound
+// 3. The 'delequal' script is now added to the shavaluator and bound
 //    as a method. When you call this, the shavaluator will first attempt
 //    an EVALSHA, and fall back onto EVAL.
 shavaluator.delequal({ keys: 'someKey', args: 'deleteMe' });
 ```
 
-### Loading scripts
+### Adding scripts
 
-Before you can run Lua scripts, you should give each one a name and load them into a shavaluator.
+Before you can run Lua scripts, you should give each one a name and add them to a shavaluator.
 
 ```js
 scripts = {
@@ -46,7 +46,7 @@ scripts = {
     end \
     return 0 \
     "
-    
+
   zmembers:
     " \
     local key = KEYS[1] \
@@ -64,14 +64,14 @@ scripts = {
     "
 };
 
-shavaluator.load(scripts);
+shavaluator.add(scripts);
 ```
 
-Loading a script does two things by default: it generates the SHA-1 of the script body, and binds the script name as a function property on the shavaluator object. It **does not** perform any network operations, such as sending `SCRIPT LOAD` to the Redis server.
+Adding a script does two things by default: it generates the SHA-1 of the script body, and binds the script name as a function property on the shavaluator object. It **does not** perform any network operations, such as sending `SCRIPT LOAD` to the Redis server.
 
 ### Executing scripts
 
-By default, loaded scripts are bound as top-level methods of the shavaluator object. These methods preserve Redis's calling convention for Lua scripts, where *key arguments* are separated from normal arguments.
+By default, adding a script to a shavaluator will bind each script as a top-level function on the shavaluator object. These functions preserve Redis's calling convention for Lua scripts, where *key arguments* are separated from normal arguments.
 
 Shavaluator offers three overloaded function signatures:
 
@@ -89,7 +89,7 @@ shavaluator.yourScript(args, function(err, result) {
 });
 ```
 
-##### 2. Original calling convention: keyCount, keys..., args...
+##### 2. Original EVAL/EVALSHA signature: keyCount, keys..., args...
 
 ```js
 shavaluator.yourScript(2, 'key1', 'key2', 'arg1', 'arg2', function(err, result) {
@@ -97,7 +97,7 @@ shavaluator.yourScript(2, 'key1', 'key2', 'arg1', 'arg2', function(err, result) 
 });
 ```
 
-##### 3. Original calling convention, as array
+##### 3. Original EVAL/EVALSHA signature, as array
 
 ```js
 args = [ 2, 'key1', 'key2', 'arg1', 'arg2' ];
@@ -108,7 +108,7 @@ shavaluator.yourScript(args, function(err, result) {
 
 #### eval()
 
-If you don't like the auto-binding interface, you can use the `eval` function, which takes the name of a loaded script.
+If you don't like the auto-binding interface, you can use the `eval` function, which takes the name of a script.
 
 ```js
 args = { keys: ['key1', 'key2'], args: ['arg1', 'arg2'] }
@@ -125,11 +125,11 @@ Available options:
 
 ##### autobind
 
-Set this to `false` if yo don't want the `load` function to automatically bind script-calling functions to the shavaluator object. Defaults to `true`.
+Set this to `false` if yo don't want the `add` function to automatically bind script-calling functions to the shavaluator object. Defaults to `true`.
 
-### load(scripts, [options])
+### add(scripts, [options])
 
-Loads Lua scripts into the shavaluator. `scripts` is a key/value object, mapping script names to script bodies.
+Adds Lua scripts to the shavaluator. `scripts` is a key/value object, mapping script names to script bodies.
 
 Available options:
 
@@ -139,7 +139,7 @@ Overrides the `autobind` option set in the constructor.
 
 ### eval(scriptName, params..., [callback])
 
-Executes the script loaded with the name `scriptName`. Script parameters can be passed in three different ways. See [Executing scripts](#executing-scripts) for usage examples.
+Executes the script named `scriptName`. Script parameters can be passed in three different ways. See [Executing scripts](#executing-scripts) for usage examples.
 
 The optional `callback` parameter is standard asynchronous callback, taking two arguments:
 

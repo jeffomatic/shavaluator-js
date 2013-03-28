@@ -10,7 +10,7 @@ testHelper = require('./test_helper')
 # See PROJECT/test/redis.sample.json for an example.
 redisClient = null
 shavaluator = new Shavaluator
-shavaluator.load require('./sample_lua_commands')
+shavaluator.add require('./sample_lua_commands')
 
 prepopulateExampleSet = (callback) ->
   redisClient.zadd 'testSet', 1, 'one', 2, 'two', 3, 'three', 4, 'four', (err, result) ->

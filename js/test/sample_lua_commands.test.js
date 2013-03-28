@@ -14,7 +14,7 @@
 
   shavaluator = new Shavaluator;
 
-  shavaluator.load(require('./sample_lua_commands'));
+  shavaluator.add(require('./sample_lua_commands'));
 
   prepopulateExampleSet = function(callback) {
     return redisClient.zadd('testSet', 1, 'one', 2, 'two', 3, 'three', 4, 'four', function(err, result) {

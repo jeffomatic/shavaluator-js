@@ -28,9 +28,9 @@
         }
       ], done);
     });
-    it('should pass an error if the script was never loaded', function(done) {
+    it('should pass an error if the script was never added', function(done) {
       return this.shavaluator["eval"]('nonexistent', function(err, result) {
-        err.message.should.match(/not loaded/);
+        err.message.should.match(/not added/);
         return done();
       });
     });
@@ -115,9 +115,9 @@
         });
       });
     });
-    describe('load()', function() {
-      return it('binds methods for loaded scripts', function(done) {
-        this.shavaluator.load({
+    describe('add()', function() {
+      return it('binds methods for scripts', function(done) {
+        this.shavaluator.add({
           foobar: "not a valid script"
         });
         _.isFunction(this.shavaluator.foobar).should.eql(true);
@@ -126,7 +126,7 @@
     });
     return describe('eval()', function() {
       beforeEach(function(done) {
-        this.shavaluator.load({
+        this.shavaluator.add({
           echo: 'return ARGV[1]',
           luaget: "return redis.call('GET', KEYS[1])",
           setnxget: "redis.call('SETNX', KEYS[1], ARGV[1]); return redis.call('GET', KEYS[1]);"

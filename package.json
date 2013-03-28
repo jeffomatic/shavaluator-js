@@ -1,6 +1,6 @@
 {
   "name": "shavaluator",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Convenience wrapper for Redis EVAL/EVALSHA",
   "keywords": [ "redis", "lua", "eval", "evalsha" ],
   "author": "Jeff Lee <jeffomatic@gmail.com>",
