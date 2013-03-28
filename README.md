@@ -137,6 +137,11 @@ Available options:
 
 Overrides the `autobind` option set in the constructor.
 
-### eval(scriptName, params...)
+### eval(scriptName, params..., [callback])
 
 Executes the script loaded with the name `scriptName`. Script parameters can be passed in three different ways. See [Executing scripts](#executing-scripts) for usage examples.
+
+The optional `callback` parameter is standard asynchronous callback, taking two arguments:
+
+1. an error, which is null on success
+2. the script result
